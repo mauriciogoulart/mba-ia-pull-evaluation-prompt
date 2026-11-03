@@ -73,24 +73,29 @@ def push_prompt_to_langsmith(prompt_name: str, prompt_data: dict) -> bool:
         # Metadados
         description = prompt_data.get('description', '')
         tags = prompt_data.get('tags', [])
-        techniques = prompt_data.get('techniques_applied', [])
+        techniques = prompt_data.get('techniques', [])
         if techniques:
             tags.extend(techniques)
-        
+
         # Fazer push para o hub usando o cliente LangSmith diretamente
+        prompt_identifier = f"{os.getenv('USERNAME_LANGSMITH_HUB')}/{prompt_name}"
         client = Client()
         client.push_prompt(
-            prompt_identifier=prompt_name,
+            prompt_identifier=prompt_identifier,
             object=prompt_template,
             is_public=True,
             tags=tags,
             description=description
         )
-        
-        print(f"✅ Prompt '{prompt_name}' enviado com sucesso para o LangSmith Hub")
+
+        print(f"✅ Prompt '{prompt_identifier}' enviado com sucesso para o LangSmith Hub")
         return True
-        
+
     except Exception as e:
+        # O Hub recusa novo commit de conteúdo idêntico; os metadados já foram atualizados
+        if "Nothing to commit" in str(e):
+            print(f"ℹ️ Prompt '{prompt_name}' sem alterações desde o último commit (metadados atualizados)")
+            return True
         print(f"❌ Erro ao enviar prompt '{prompt_name}': {e}")
         return False
 
@@ -124,7 +129,7 @@ def main():
     print_section_header("PUSH PROMPTS PARA LANGSMITH HUB")
     
     # Verificar variáveis de ambiente
-    required_vars = ['LANGSMITH_API_KEY']
+    required_vars = ['LANGSMITH_API_KEY', 'USERNAME_LANGSMITH_HUB']
     if not check_env_vars(required_vars):
         sys.exit(1)
     

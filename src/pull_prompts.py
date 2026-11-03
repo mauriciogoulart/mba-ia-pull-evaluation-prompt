@@ -48,7 +48,8 @@ def pull_prompts_from_langsmith():
     
     try:
         # Faz o pull do objeto ChatPromptTemplate
-        prompt_template = hub.pull(PROMPT_REPO)
+        client = Client()
+        prompt_template = client.pull_prompt(PROMPT_REPO, dangerously_pull_public_prompt=True)
         
         # Extrai o conteúdo das mensagens (System e User)
         # Nota: A estrutura depende de como o prompt foi salvo. 
